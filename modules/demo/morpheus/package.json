@@ -1,0 +1,42 @@
+{
+  "private": true,
+  "name": "@rapidsai/demo-morpheus",
+  "main": "index.js",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "author": "NVIDIA, Inc. (https://nvidia.com/)",
+  "maintainers": [
+    "Paul Taylor <paul.e.taylor@me.com>"
+  ],
+  "bin": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV=development node index.js",
+    "build": "next build",
+    "start": "next build && node index.js",
+    "clean": "rimraf _next"
+  },
+  "dependencies": {
+    "@material-ui/core": "4.12.3",
+    "@material-ui/data-grid": "4.0.0-alpha.37",
+    "@material-ui/icons": "4.11.2",
+    "@nvidia/cuda": "0.0.1",
+    "@rapidsai/jsdom": "0.0.1",
+    "brace": "0.11.1",
+    "fastify": "3.20.2",
+    "fastify-nextjs": "6.0.0",
+    "fastify-plugin": "3.0.0",
+    "nanoid": "3.1.25",
+    "next": "11.1.0",
+    "react": "17.0.2",
+    "react-ace": "6.6.0",
+    "react-dom": "17.0.2",
+    "react-serialize": "0.2.0",
+    "react-table": "7.7.0",
+    "react-virtualized-auto-sizer": "1.0.6",
+    "simple-peer": "9.11.0"
+  },
+  "devDependencies": {
+    "@types/react": "17.0.19",
+    "@types/react-virtualized-auto-sizer": "1.0.1"
+  }
+}

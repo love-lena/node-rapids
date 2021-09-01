@@ -1,0 +1,45 @@
+.title-bar {
+    width: 100%;
+    position: relative;
+}
+
+.left-pane select {
+    flex: 0 0 34px;
+    padding: 5px 35px 5px 5px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    appearance: none;
+}
+
+.editor {
+    flex: 0 1 100%;
+}
+
+.webrtc-view {
+    flex: 0 1 60%;
+    position: relative;
+}
+
+.footer {
+    text-align: left;
+    padding: 1rem;
+}
+
+.footer.text {
+    margin: 0;
+}
+
+.bottom-view {
+    display: flex;
+    flex: 1 1 60%;
+}
+
+.table-view {
+    flex: 1 1 60%;
+    padding: 10px;
+}
+
+.console-view {
+    flex: 1 1 40%;
+    padding: 10px;
+}
