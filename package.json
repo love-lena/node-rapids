@@ -57,7 +57,8 @@
     "modules/demo/ipc/*",
     "modules/demo/deck/*",
     "modules/demo/tfjs/*",
-    "modules/demo/client-server"
+    "modules/demo/client-server",
+    "modules/demo/morpheus"
   ],
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "4.26.0",
@@ -127,5 +128,8 @@
   },
   "release": {
     "analyzeCommits": "simple-commit-message"
+  },
+  "devDependencies": {
+    "@types/react-table": "7.7.2"
   }
 }
