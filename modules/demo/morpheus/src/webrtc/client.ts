@@ -14,6 +14,13 @@
 
 const SimplePeer = require('simple-peer');
 
+let _peer = undefined;
+
+export function getPeer(rtcId: string) {
+  _peer = _peer ? _peer : createPeer(rtcId);
+  return _peer;
+}
+
 export function createPeer(rtcId: string) {
   return negotiate(rtcId,
                    new SimplePeer({initiator: true, sdpTransform})

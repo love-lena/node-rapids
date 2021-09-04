@@ -1,6 +1,7 @@
 import React from 'react';
-import { Paper } from '@material-ui/core';
+import { Button, Paper } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
+import { Typography } from '@material-ui/core';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -9,6 +10,8 @@ const useStyles = makeStyles((theme) => ({
     textAlign: 'center',
     color: theme.palette.text.secondary,
     height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
   },
 }));
 
@@ -17,7 +20,10 @@ export default function ConsoleView() {
 
   return (
     <Paper className={classes.paper}>
-      Console
+
+      <Typography variant="h5">
+        Console
+      </Typography>
     </Paper>
   );
 }

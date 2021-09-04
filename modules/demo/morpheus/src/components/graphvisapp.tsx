@@ -33,7 +33,7 @@ const GraphVisApp = (props: Props) => {
       </div>
       <div className={styles['bottom-view']}>
         <div className={styles['table-view']}>
-          <NavTabs></NavTabs>
+          <NavTabs rtcId={props.rtcId}></NavTabs >
         </div>
         <div className={styles['console-view']}>
           <ConsoleView></ConsoleView>

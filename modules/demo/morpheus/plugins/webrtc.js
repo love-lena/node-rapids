@@ -55,7 +55,58 @@ function webrtcPlugin(fastify, options, done) {
     }
   });
 
+  fastify.post(`${prefix}/sendnew`, (req, reply) => {
+    const peer = fastify.getPeer(req.body.rtcId);
+    if (!peer) {
+      reply.status(401).send('Invalid rtcId');
+    } else {
+      peer.send(JSON.stringify({
+        type: 'data', data: makeData(10)
+      }));
+      reply.status(200).send();
+    }
+  });
+
   done();
+}
+
+const range = len => {
+  const arr = []
+  for (let i = 0; i < len; i++) {
+    arr.push(i)
+  }
+  return arr
+}
+
+const newPerson = () => {
+  const statusChance = Math.random()
+  return {
+    firstName: Math.floor(Math.random() * 30),
+    lastName: Math.floor(Math.random() * 30),
+    age: Math.floor(Math.random() * 30),
+    visits: Math.floor(Math.random() * 100),
+    progress: Math.floor(Math.random() * 100),
+    status:
+      statusChance > 0.66
+        ? 'relationship'
+        : statusChance > 0.33
+          ? 'complicated'
+          : 'single',
+  }
+}
+
+function makeData(...lens) {
+  const makeDataLevel = (depth = 0) => {
+    const len = lens[depth]
+    return range(len).map(d => {
+      return {
+        ...newPerson(),
+        subRows: lens[depth + 1] ? makeDataLevel(depth + 1) : undefined,
+      }
+    })
+  }
+
+  return makeDataLevel()
 }
 
 function sdpTransform(sdp) {
