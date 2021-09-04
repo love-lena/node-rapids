@@ -52,7 +52,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function NavTabs() {
+export default function NavTabs(props) {
   const classes = useStyles();
   const [value, setValue] = React.useState(0);
 
@@ -78,19 +78,19 @@ export default function NavTabs() {
           <div style={{ height: height, width: width }}>
             <TabPanel value={value} index={0}>
               <div style={{ height: height * .85, width: '100%' }}>
-                <DataTable sel={0} />
+                <DataTable rtcId={props.rtcId} />
               </div>
             </TabPanel>
 
             <TabPanel value={value} index={1}>
               <div style={{ height: height * .85, width: '100%' }}>
-                <DataTable sel={1} />
+                <DataTable rtcId={props.rtcId} />
               </div>
             </TabPanel>
 
             <TabPanel value={value} index={2}>
               <div style={{ height: height * .85, width: '100%' }}>
-                <DataTable sel={0} />
+                <DataTable rtcId={props.rtcId} />
               </div>
             </TabPanel>
           </div>

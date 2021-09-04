@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import isBrowser from '../is-browser';
-import { createPeer } from '../webrtc/client';
+import { getPeer } from '../webrtc/client';
 import React, { Component, createRef } from 'react';
 
 type Props = {
@@ -37,7 +37,7 @@ export default class WebRTCFrame extends Component<Props> {
     if (isBrowser) {
       this._playStream = this._playStream.bind(this);
       this._destroyPeer = this._destroyPeer.bind(this);
-      this._peer = createPeer(this.props.rtcId);
+      this._peer = getPeer(this.props.rtcId);
       this._peer.on('stream', this._playStream);
       window.addEventListener('beforeunload', this._destroyPeer);
     }
