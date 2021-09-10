@@ -115,6 +115,8 @@ export class NodeLayer extends Layer {
       this.internalState.selectedNodeId    = this.internalState.highlightedNodeId;
       this.internalState.selectedNodeIndex = this.internalState.highlightedNodeIndex;
     }
+    info.object = info.index;  // HACK - deck-picker.js uses info.object to determine if the item
+                               // has been added to the list already
     return info;
   }
   _getModel({gl, shaderCache}: DeckContext) {
