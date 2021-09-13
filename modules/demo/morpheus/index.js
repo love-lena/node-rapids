@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node -r esm
+#!/usr/bin/env -S node --trace-uncaught
 
 // Copyright (c) 2021, NVIDIA CORPORATION.
 //
@@ -14,24 +14,79 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const Fastify = require('fastify');
-
-const dev = process.env.NODE_ENV !== 'production';
+const Path                        = require('path');
+const wrtc                        = require('wrtc');
+const Fastify                     = require('fastify');
+const Peer                        = require('simple-peer');
+const {renderLesson, renderEvent} = require('./render');
 
 const fastify = Fastify()
-  .register(require('./plugins/webrtc'))
-  .register(require('fastify-nextjs'), { dev })
-  .after(() => {
-    fastify.next('/:rtcId', (next, req, reply) => {
-      const { rtcId } = req.params;
-      if (!rtcId || !fastify.getPeer(rtcId)) {
-        return reply.redirect(302, `/${fastify.newPeer().id}`);
-      }
-      next.render(req.raw, reply.raw, `/${rtcId}`, req.query);
-    });
-
-    fastify.next('/api/table');
-  });
+                  .register(require('fastify-socket.io'))
+                  .register(require('fastify-static'), {root: Path.join(__dirname, 'public')})
+                  .get('/', (req, reply) => reply.sendFile('video.html'));
 
 fastify.listen(8080)
+  .then(() => fastify.io.on('connect', onConnect))
   .then(() => console.log('server ready'));
+
+function onConnect(sock) {
+  let cancelLesson = () => {};
+  const peer            = new Peer({
+    wrtc,
+    sdpTransform: (sdp) => {
+      // Remove bandwidth restrictions
+      // https://github.com/webrtc/samples/blob/89f17a83ed299ef28d45b933419d809b93d41759/src/content/peerconnection/bandwidth/js/main.js#L240
+      sdp = sdp.replace(/b=AS:.*\r\n/, '').replace(/b=TIAS:.*\r\n/, '');
+      return sdp;
+    }
+  });
+  peer.on('close', closeConnection);
+  peer.on('error', closeConnection);
+  peer.on('data', onDataChannelMessage);
+  sock.on('disconnect', () => peer.destroy());
+  sock.on('signal', (data) => { peer.signal(data); });
+  peer.on('signal', (data) => { sock.emit('signal', data); });
+  peer.on('connect', () => {
+    const stream = new wrtc.MediaStream({id: `${sock.id}:video`});
+    const source = new wrtc.nonstandard.RTCVideoSource({});
+    stream.addTrack(source.createTrack());
+    peer.addStream(stream);
+    cancelLesson = renderLesson(
+      {
+        id: sock.id,
+        width: 800,
+        height: 600,
+        lesson: '14',
+        animationProps: {
+          startTime: Date.now(),
+          engineTime: 0,
+          tick: 0,
+          tock: 0,
+          time: 0,
+        }
+      },
+      source,
+    );
+  });
+
+  function closeConnection(err) {
+    console.log('connection closed' + (err ? ` (${err})` : ''));
+    cancelLesson && cancelLesson({id: sock.id});
+    cancelLesson = null;
+    sock.disconnect(true);
+    err ? peer.destroy(err) : peer.destroy();
+  }
+
+  function onDataChannelMessage(msg) {
+    const {type, data} = (() => {
+      try {
+        return JSON.parse('' + msg);
+      } catch (e) { return {}; }
+    })();
+    switch (data && type) {
+      case 'event': {
+        return renderEvent(sock.id, data);
+      }
+    }
+  }
+}

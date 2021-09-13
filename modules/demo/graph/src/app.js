@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+console.log('in app.js');
+
 import {log as deckLog, OrthographicView} from '@deck.gl/core';
 import {TextLayer} from '@deck.gl/layers';
 import {default as DeckGL} from '@deck.gl/react';
@@ -22,6 +24,8 @@ import React from 'react';
 
 import {default as loadGraphData} from './loader';
 
+console.log('finished imports');
+
 deckLog.level = 0;
 deckLog.enable(false);
 
@@ -29,6 +33,7 @@ const composeFns = (fns) => function(...args) { fns.forEach((fn) => fn && fn.app
 
 export class App extends React.Component {
   constructor(props, context) {
+    console.log('app.js constructor');
     super(props, context);
     this._isMounted = false;
     this._deck      = React.createRef();

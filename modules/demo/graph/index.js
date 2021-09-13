@@ -48,6 +48,19 @@ module.exports = (glfwOptions = {
     }
   }
 
+  console.log({
+    glfwOptions,
+    // Change cwd to the example dir so relative file paths are resolved
+    module: {path: __dirname},
+  });
+  console.log({
+    nodes: inputs(delay, parseArg('--nodes=')),
+    edges: inputs(delay, parseArg('--edges=')),
+    width: parseInt(parseArg('--width=', 800)) | 0,
+    height: parseInt(parseArg('--height=', 600)) | 0,
+    layoutParams: JSON.parse(`{${parseArg('--params=')}}`),
+  });
+
   return require('@rapidsai/jsdom')
     .RapidsJSDOM.fromReactComponent(
       './src/app.js',
