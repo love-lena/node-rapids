@@ -52,87 +52,86 @@ export class App extends React.Component {
       },
     ];
 
-    this.state = { graph: {}, autoCenter: true, labels: [], rectdata: initrectdata, startPos: [0, 0] };
-
-    function convertCoords(x, y) {
-      // 0,0 -> -200,-150
-      // 800,600 -> 200,150
-      // 400,300 -> 0,0
-      // 0,600 -> -200,150
-      // 800,0 -> 200,-150
-
-      return { x: (x / 2) - 200, y: (y / 2 - 150) };
-    }
+    this.state = { graph: {}, autoCenter: true, labels: [], rectdata: initrectdata, startPos: null };
 
     const onDrag = (info, event) => {
-      const px = info.x;
-      const py = info.y;
-      const { x, y } = convertCoords(px, py)
-      // console.log("onDrag: ", x, y)
-      // console.log(this.state.rectdata);
-      this.setState((state, props) => {
-        const startPoint = state.rectdata[0].polygon[0];
-        return {
-          rectdata: [{
-            polygon: [
-              startPoint,
-              [startPoint[0], y],
-              [x, y],
-              [x, startPoint[1]]
-            ],
-            show: true,
-          }]
-        }
-      });
+      if (!event?.srcEvent?.shiftKey) {
+        return;
+      }
+      if (this.state.startPos) {
+        const { x, y } = info;
+        const [px, py] = info.viewport.unproject([x, y]);
+        // console.log("onDrag: ", {x, y})
+        // console.log(this.state.rectdata);
+        this.setState((state, props) => {
+          const startPoint = state.rectdata[0].polygon[0];
+          return {
+            rectdata: [{
+              polygon: [
+                startPoint,
+                [startPoint[0], py],
+                [px, py],
+                [px, startPoint[1]]
+              ],
+              show: true,
+            }]
+          }
+        });
+      }
       //if (target) { [window, target].forEach((element) => (element.style || {}).cursor = 'grabbing'); }
     }
 
     const onDragStart = (info, event) => {
-      console.log('onDragStart');
-      const px = info.x;
-      const py = info.y;
-      const { x, y } = convertCoords(px, py)
+      if (!event?.srcEvent?.shiftKey) {
+        return;
+      }
+      // console.log('onDragStart');
+      const { x, y } = info;
+      const [px, py] = info.viewport.unproject([x, y]);
       this.setState((state, props) => {
         return {
           rectdata: [{
             polygon: [
-              [x, y],
-              [x, y],
-              [x, y],
-              [x, y]
+              [px, py],
+              [px, py],
+              [px, py],
+              [px, py]
             ],
             show: true,
           }],
-          startPos: [px, py]
+          startPos: [x, y]
         }
       });
-      console.log(x, y);
+      // console.log({ x, y, event });
     }
 
     const onDragEnd = (info, event) => {
-      console.log('onDragEnd');
-      const px = info.x;
-      const py = info.y;
-      const { x, y } = convertCoords(px, py)
+      if (!event?.srcEvent?.shiftKey) {
+        return;
+      }
+      // console.log('onDragEnd');
+      const { x, y } = info;
+      const sx = this.state.startPos[0];
+      const sy = this.state.startPos[1];
+
+      // console.log({ x, y, sx, sy });
+
       this.setState((state, props) => {
         return {
           rectdata: [{
             polygon: state.rectdata[0].polygon,
             show: false,
-          }]
+          }],
+          startPos: null
         };
       });
-      console.log(x, y);
-
-      const sx = this.state.startPos[0];
-      const sy = this.state.startPos[1];
 
       // TODO: negative width/height doesnt work it seems
       let selectInfo = this._deck.current.pickObjects({
-        x: sx,
-        y: sy,
-        width: px - sx,
-        height: py - sy,
+        x: Math.min(sx, x),
+        y: Math.min(sy, y),
+        width: Math.abs(x - sx),
+        height: Math.abs(y - sy),
       });
       const nodes = selectInfo.filter(selected => selected.hasOwnProperty('nodeId'));
 
@@ -149,17 +148,16 @@ export class App extends React.Component {
     }
 
     const handleClick = (info, event) => {
-      // let selectInfo = this._deck.current.pickObjects({
-      //   x: info.x,
-      //   y: info.y,
-      //   width: 150,
-      //   height: 150,
-      // });
-      // const nodes = selectInfo.filter(selected => selected.hasOwnProperty('nodeId'));
+      let selectInfo = [this._deck.current.pickObject({
+        x: info.x,
+        y: info.y,
+        radius: 1,
+      })];
+      const nodes = selectInfo.filter(selected => selected && selected.hasOwnProperty('nodeId'));
 
-      // const nodelabels = nodes.map(n => [n.nodeId, n.layer.props.data.nodes.attributes.nodeName.getValue(n.nodeId)]);
+      const nodelabels = nodes.map(n => [n.nodeId, n.layer.props.data.nodes.attributes.nodeName.getValue(n.nodeId)]);
 
-      // props.peer.send(JSON.stringify({ type: 'data', data: nodelabels }));
+      props.peer.send(JSON.stringify({ type: 'data', data: nodelabels }));
     };
 
     props.onClick = handleClick;
@@ -209,7 +207,11 @@ export class App extends React.Component {
         <PolygonLayer
           data={this.state.rectdata}
           getPolygon={d => d.polygon}
-          filled={false}
+          lineWidthUnits="pixels"
+          getLineWidth={() => 2}
+          getLineColor={() => [0, 0, 0, 150]}
+          getFillColor={() => [255, 255, 255, 65]}
+          filled={this.state.rectdata?.[0].show}
           stroked={this.state.rectdata?.[0].show}
         />
         <GraphLayer
@@ -261,9 +263,10 @@ App.defaultProps = {
     doubleClickZoom: false,
     scrollZoom: {
       speed: 0.01,
-      smooth: true,
+      // smooth: true,
+      smooth: false,
     },
-    dragPan: false
+    dragPan: true
   },
   initialViewState: {
     zoom: 1,
