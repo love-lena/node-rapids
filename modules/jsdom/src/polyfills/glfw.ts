@@ -563,30 +563,30 @@ export function installGLFWWindow(window: jsdom.DOMWindow, windowOptions: GLFWWi
       case 'mouseup': {
         const button = domToGLFWButton(event);
         if (button !== -1) {
+          const {x = _mouseX, y = _mouseY} = event;
           event = GLFWMouseEvent.fromMouseButton(this, button, glfw.RELEASE, event.modifiers);
-          ({x: event._x = _mouseX, y: event._y = _mouseY} = event);
-          return this._dispatchGLFWMouseEventIntoDOM(event);
+          return this._dispatchGLFWMouseEventIntoDOM(Object.assign(event, {_x: x, _y: y}));
         }
         return true;
       }
       case 'mousedown': {
         const button = domToGLFWButton(event);
         if (button !== -1) {
+          const {x = _mouseX, y = _mouseY} = event;
           event = GLFWMouseEvent.fromMouseButton(this, button, glfw.PRESS, event.modifiers);
-          ({x: event._x = _mouseX, y: event._y = _mouseY} = event);
-          return this._dispatchGLFWMouseEventIntoDOM(event);
+          return this._dispatchGLFWMouseEventIntoDOM(Object.assign(event, {_x: x, _y: y}));
         }
         return true;
       }
       case 'mouseenter': {
-        event = GLFWMouseEvent.fromMouseEnter(this, +true);
-        ({x: event._x = _mouseX, y: event._y = _mouseY} = event);
-        return this._dispatchGLFWMouseEventIntoDOM(event);
+        const {x = _mouseX, y = _mouseY} = event;
+        event                            = GLFWMouseEvent.fromMouseEnter(this, +true);
+        return this._dispatchGLFWMouseEventIntoDOM(Object.assign(event, {_x: x, _y: y}));
       }
       case 'mouseleave': {
-        event = GLFWMouseEvent.fromMouseEnter(this, +false);
-        ({x: event._x = _mouseX, y: event._y = _mouseY} = event);
-        return this._dispatchGLFWMouseEventIntoDOM(event);
+        const {x = _mouseX, y = _mouseY} = event;
+        event                            = GLFWMouseEvent.fromMouseEnter(this, +false);
+        return this._dispatchGLFWMouseEventIntoDOM(Object.assign(event, {_x: x, _y: y}));
       }
       default: break;
     }

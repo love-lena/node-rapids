@@ -14,7 +14,8 @@
 
 import React from 'react';
 
-import { TextLayer } from '@deck.gl/layers';
+import { TextLayer, PolygonLayer } from '@deck.gl/layers';
+
 import { default as DeckGL } from '@deck.gl/react';
 import { log as deckLog, OrthographicView } from '@deck.gl/core';
 
@@ -31,11 +32,143 @@ deckLog.enable(false);
 const composeFns = (fns) => function (...args) { fns.forEach((fn) => fn && fn.apply(this, args)); }
 
 export class App extends React.Component {
+
   constructor(props, context) {
     super(props, context);
     this._isMounted = false;
     this._deck = React.createRef();
-    this.state = { graph: {}, autoCenter: true, labels: [] };
+
+    //center of the screen in 0,0
+    // 400 wide
+    // 300 tall
+    // for some reason ???
+    // 0,0 -> -200,-150
+    //1  4
+    //2  3
+    var initrectdata = [
+      {
+        polygon: [[-200, -150], [-200, -50], [-100, -50], [-100, -150]],
+        show: false
+      },
+    ];
+
+    this.state = { graph: {}, autoCenter: true, labels: [], rectdata: initrectdata, startPos: [0, 0] };
+
+    function convertCoords(x, y) {
+      // 0,0 -> -200,-150
+      // 800,600 -> 200,150
+      // 400,300 -> 0,0
+      // 0,600 -> -200,150
+      // 800,0 -> 200,-150
+
+      return { x: (x / 2) - 200, y: (y / 2 - 150) };
+    }
+
+    const onDrag = (info, event) => {
+      const px = info.x;
+      const py = info.y;
+      const { x, y } = convertCoords(px, py)
+      // console.log("onDrag: ", x, y)
+      // console.log(this.state.rectdata);
+      this.setState((state, props) => {
+        const startPoint = state.rectdata[0].polygon[0];
+        return {
+          rectdata: [{
+            polygon: [
+              startPoint,
+              [startPoint[0], y],
+              [x, y],
+              [x, startPoint[1]]
+            ],
+            show: true,
+          }]
+        }
+      });
+      //if (target) { [window, target].forEach((element) => (element.style || {}).cursor = 'grabbing'); }
+    }
+
+    const onDragStart = (info, event) => {
+      console.log('onDragStart');
+      const px = info.x;
+      const py = info.y;
+      const { x, y } = convertCoords(px, py)
+      this.setState((state, props) => {
+        return {
+          rectdata: [{
+            polygon: [
+              [x, y],
+              [x, y],
+              [x, y],
+              [x, y]
+            ],
+            show: true,
+          }],
+          startPos: [px, py]
+        }
+      });
+      console.log(x, y);
+    }
+
+    const onDragEnd = (info, event) => {
+      console.log('onDragEnd');
+      const px = info.x;
+      const py = info.y;
+      const { x, y } = convertCoords(px, py)
+      this.setState((state, props) => {
+        return {
+          rectdata: [{
+            polygon: state.rectdata[0].polygon,
+            show: false,
+          }]
+        };
+      });
+      console.log(x, y);
+
+      const sx = this.state.startPos[0];
+      const sy = this.state.startPos[1];
+
+      // TODO: negative width/height doesnt work it seems
+      let selectInfo = this._deck.current.pickObjects({
+        x: sx,
+        y: sy,
+        width: px - sx,
+        height: py - sy,
+      });
+      const nodes = selectInfo.filter(selected => selected.hasOwnProperty('nodeId'));
+
+      const nodelabels = nodes.map(n => [n.nodeId, n.layer.props.data.nodes.attributes.nodeName.getValue(n.nodeId)]);
+
+      props.peer.send(JSON.stringify({ type: 'data', data: nodelabels }));
+    }
+
+    const onHover = ({ index }, { target }) => {
+      if (target) {
+        [window, target].forEach((element) => (element.style || {}).cursor =
+          ~index ? 'pointer' : 'default');
+      }
+    }
+
+    const handleClick = (info, event) => {
+      // let selectInfo = this._deck.current.pickObjects({
+      //   x: info.x,
+      //   y: info.y,
+      //   width: 150,
+      //   height: 150,
+      // });
+      // const nodes = selectInfo.filter(selected => selected.hasOwnProperty('nodeId'));
+
+      // const nodelabels = nodes.map(n => [n.nodeId, n.layer.props.data.nodes.attributes.nodeName.getValue(n.nodeId)]);
+
+      // props.peer.send(JSON.stringify({ type: 'data', data: nodelabels }));
+    };
+
+    props.onClick = handleClick;
+    props.onHover = onHover;
+    props.onDrag = onDrag;
+    props.onDragEnd = onDragEnd;
+    props.onDragStart = onDragStart;
+
+
   }
   componentWillUnmount() { this._isMounted = false; }
   componentDidMount() {
@@ -45,6 +178,7 @@ export class App extends React.Component {
       .forEach((state) => this.setState(state))
       .catch((e) => console.error(e));
   }
+
   render() {
     const { onAfterRender, ...props } = this.props;
     const { params = {}, selectedParameter, labels } = this.state;
@@ -64,6 +198,7 @@ export class App extends React.Component {
       labels[1].position = [minX, maxY];
     }
 
+    //console.log(this.state.rectdata);
     return (
       <DeckGL {...props}
         ref={this._deck}
@@ -71,6 +206,12 @@ export class App extends React.Component {
           autoCenter: params.autoCenter ? (params.autoCenter.val = false) : false
         })}
         onAfterRender={composeFns([onAfterRender, this.state.onAfterRender])}>
+        <PolygonLayer
+          data={this.state.rectdata}
+          getPolygon={d => d.polygon}
+          filled={false}
+          stroked={this.state.rectdata?.[0].show}
+        />
         <GraphLayer
           edgeStrokeWidth={2}
           edgeOpacity={.5}
@@ -82,30 +223,32 @@ export class App extends React.Component {
           labels={this.state.labels}
           {...this.state.graph}
         />
-        {viewport && selectedParameter !== undefined ?
-          <TextLayer
-            sizeScale={1}
-            opacity={0.9}
-            maxWidth={2000}
-            pickable={false}
-            backgroundColor={[46, 46, 46]}
-            getTextAnchor='start'
-            getAlignmentBaseline='top'
-            getSize={(d) => d.size}
-            getColor={(d) => d.color}
-            getPixelOffset={(d) => [0, d.index * 15]}
-            getPosition={(d) => d.position}
-            data={Object.keys(params).map((key, i) => ({
-              size: 15,
-              index: i,
-              text: i === selectedParameter
-                ? `(${i}) ${params[key].name}: ${params[key].val}`
-                : ` ${i}  ${params[key].name}: ${params[key].val}`,
-              color: [255, 255, 255],
-              position: [minX, minY],
-            }))}
-          /> : null}
-      </DeckGL>
+        {
+          viewport && selectedParameter !== undefined ?
+            <TextLayer
+              sizeScale={1}
+              opacity={0.9}
+              maxWidth={2000}
+              pickable={false}
+              backgroundColor={[46, 46, 46]}
+              getTextAnchor='start'
+              getAlignmentBaseline='top'
+              getSize={(d) => d.size}
+              getColor={(d) => d.color}
+              getPixelOffset={(d) => [0, d.index * 15]}
+              getPosition={(d) => d.position}
+              data={Object.keys(params).map((key, i) => ({
+                size: 15,
+                index: i,
+                text: i === selectedParameter
+                  ? `(${i}) ${params[key].name}: ${params[key].val}`
+                  : ` ${i}  ${params[key].name}: ${params[key].val}`,
+                color: [255, 255, 255],
+                position: [minX, minY],
+              }))}
+            /> : null
+        }
+      </DeckGL >
     );
   }
 }
@@ -119,12 +262,9 @@ App.defaultProps = {
     scrollZoom: {
       speed: 0.01,
       smooth: true,
-    }
+    },
+    dragPan: false
   },
-  onHover: onDragEnd,
-  onDrag: onDragStart,
-  onDragEnd: onDragEnd,
-  onDragStart: onDragStart,
   initialViewState: {
     zoom: 1,
     target: [0, 0, 0],
@@ -139,19 +279,6 @@ App.defaultProps = {
     })
   ]
 };
-
-function onDragStart({ index }, { target }) {
-  if (target) {
-    [window, target].forEach((element) => (element.style || {}).cursor = 'grabbing');
-  }
-}
-
-function onDragEnd({ index }, { target }) {
-  if (target) {
-    [window, target].forEach((element) =>
-      (element.style || {}).cursor = ~index ? 'pointer' : 'default');
-  }
-}
 
 function centerOnBbox([minX, maxX, minY, maxY]) {
   const width = maxX - minX, height = maxY - minY;

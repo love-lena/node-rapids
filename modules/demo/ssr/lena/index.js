@@ -64,7 +64,7 @@ function onConnect(sock) {
     const source = new wrtc.nonstandard.RTCVideoSource({});
     stream.addTrack(source.createTrack());
     peer.addStream(stream);
-    jsdom = createGraph(source);
+    jsdom = createGraph(source, peer);
   });
 
   function closeConnection(err) {
@@ -90,7 +90,7 @@ function onConnect(sock) {
   }
 }
 
-function createGraph(source) {
+function createGraph(source, peer) {
   const jsdom = new RapidsJSDOM({
     module: {
       path: __dirname,
@@ -108,6 +108,7 @@ function createGraph(source) {
     const App           = require('./app.jsx').default;
     let framebuffer     = null;
     const props         = {
+      peer: peer,
       onWebGLInitialized: (gl) => framebuffer = new Framebuffer(gl),
       onBeforeRender({gl}) { this._framebuffer = framebuffer; },
       onResize({width, height}) { framebuffer.resize({width, height}); },
@@ -118,6 +119,7 @@ function createGraph(source) {
                     document.body.appendChild(document.createElement('div')));
   }, {
     __onFrame({gl, framebuffer}) { source.onFrame(copyFramebuffer({gl, framebuffer})); },
+    peer,
   });
 
   return jsdom;

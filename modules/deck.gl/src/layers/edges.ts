@@ -108,7 +108,7 @@ export class EdgeLayer extends Layer {
       this.internalState.selectedSourceNodeId = this.internalState.highlightedSourceNodeId;
       this.internalState.selectedTargetNodeId = this.internalState.highlightedTargetNodeId;
     }
-
+    info.object = info.index;  // deck.gl uses info.object to check if item has already been added
     return info;
   }
   _getModel({gl, shaderCache}: DeckContext) {

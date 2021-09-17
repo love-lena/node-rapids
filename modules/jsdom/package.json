@@ -19,6 +19,7 @@
     "tsc:watch": "rimraf build/js && tsc -p ./tsconfig.json -w"
   },
   "dependencies": {
+    "canvg": "3.0.7",
     "@nvidia/glfw": "0.0.1",
     "@rapidsai/core": "0.0.1",
     "@types/jsdom": "16.2.13",
