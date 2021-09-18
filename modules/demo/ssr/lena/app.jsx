@@ -204,16 +204,6 @@ export class App extends React.Component {
           autoCenter: params.autoCenter ? (params.autoCenter.val = false) : false
         })}
         onAfterRender={composeFns([onAfterRender, this.state.onAfterRender])}>
-        <PolygonLayer
-          data={this.state.rectdata}
-          getPolygon={d => d.polygon}
-          lineWidthUnits="pixels"
-          getLineWidth={() => 2}
-          getLineColor={() => [0, 0, 0, 150]}
-          getFillColor={() => [255, 255, 255, 65]}
-          filled={this.state.rectdata?.[0].show}
-          stroked={this.state.rectdata?.[0].show}
-        />
         <GraphLayer
           edgeStrokeWidth={2}
           edgeOpacity={.5}
@@ -225,6 +215,19 @@ export class App extends React.Component {
           labels={this.state.labels}
           {...this.state.graph}
         />
+        {
+          this.state.rectdata?.[0].show ?
+            <PolygonLayer
+              filled={true}
+              stroked={true}
+              data={this.state.rectdata}
+              getPolygon={d => d.polygon}
+              lineWidthUnits="pixels"
+              getLineWidth={() => 2}
+              getLineColor={() => [0, 0, 0, 150]}
+              getFillColor={() => [255, 255, 255, 65]}
+            /> : null
+        }
         {
           viewport && selectedParameter !== undefined ?
             <TextLayer
@@ -286,14 +289,14 @@ App.defaultProps = {
 function centerOnBbox([minX, maxX, minY, maxY]) {
   const width = maxX - minX, height = maxY - minY;
   if ((width === width) && (height === height)) {
-    const { outerWidth, outerHeight } = window;
+    const { offsetWidth, offsetHeight } = window;
     const world = (width > height ? width : height);
-    const screen = (width > height ? outerWidth : outerHeight) * .9;
+    const screen = (width > height ? offsetWidth : offsetHeight) * .75;
     const zoom = (world > screen ? -(world / screen) : (screen / world));
     return {
       minZoom: Number.NEGATIVE_INFINITY,
       maxZoom: Number.POSITIVE_INFINITY,
-      zoom: Math.log(Math.abs(zoom)) * Math.sign(zoom),
+      zoom: Math.log2(Math.abs(zoom)) * Math.sign(zoom),
       target: [minX + (width * .5), minY + (height * .5), 0],
     };
   }

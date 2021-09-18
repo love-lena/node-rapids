@@ -459,8 +459,8 @@ export function installGLFWWindow(window: jsdom.DOMWindow, windowOptions: GLFWWi
     {name: 'scrollX', aliases: ['scrollLeft', 'pageXOffset']},
     {name: 'scrollY', aliases: ['scrollTop', 'pageYOffset']},
     {name: 'onwheel', aliases: ['onscroll', 'onmousewheel']},
-    {name: 'width', aliases: ['clientWidth', 'innerWidth', 'offsetWidth']},
-    {name: 'height', aliases: ['clientHeight', 'innerHeight', 'offsetHeight']},
+    {name: 'width', aliases: ['clientWidth', 'innerWidth', 'outerWidth', 'offsetWidth']},
+    {name: 'height', aliases: ['clientHeight', 'innerHeight', 'outerHeight', 'offsetHeight']},
   ]);
 
   // Attaching functions
@@ -833,6 +833,8 @@ function defineLayoutProps(window: jsdom.DOMWindow, proto: any) {
    'clientHeight',
    'innerWidth',
    'innerHeight',
+   'outerWidth',
+   'outerHeight',
    'offsetWidth',
    'offsetHeight',
   ].forEach((k) => Object.defineProperty(proto, k, {
